@@ -42,25 +42,29 @@ class NewsParser extends Command
      */
     public function handle()
     {
-        $response = Http::get('http://static.feed.rbc.ru/rbc/logical/footer/news.rss');
+        try{
+            $response = Http::get('http://static.feed.rbc.ru/rbc/logical/footer/news.rss');
 
-        //Loging response data save in DB
-        $log = new Log;
-        $log->request_method = "GET";
-        $log->request_url   = "http://static.feed.rbc.ru/rbc/logical/footer/news.rss";
-        $log->response_code = $response->status();
-        $log->response_body = $response->body();
-        $log->save();
-        
-        $xmlObject = simplexml_load_string($response->body(), 'SimpleXMLElement', LIBXML_NOCDATA);
-        $json       = json_encode($xmlObject);
-        $phpArray   = json_decode($json, true); 
+            //Loging response data save in DB
+            $log = new Log;
+            $log->request_method = "GET";
+            $log->request_url   = "http://static.feed.rbc.ru/rbc/logical/footer/news.rss";
+            $log->response_code = $response->status();
+            $log->response_body = $response->body();
+            $log->save();
 
-        for($i = 0; $i < count($phpArray["channel"]["item"]); $i++){
-            if($this->checkInDB($phpArray["channel"]["item"][$i]["guid"])){
-                $this->saveNews($phpArray["channel"]["item"][$i]);
+            $xmlObject = simplexml_load_string($response->body(), 'SimpleXMLElement', LIBXML_NOCDATA);
+            $json       = json_encode($xmlObject);
+            $phpArray   = json_decode($json, true); 
+
+            for($i = 0; $i < count($phpArray["channel"]["item"]); $i++){
+                if($this->checkInDB($phpArray["channel"]["item"][$i]["guid"])){
+                    $this->saveNews($phpArray["channel"]["item"][$i]);
+                }
             }
-        }
+        }catch (\Exception $e){
+            print($e);
+	    }
     }
 
     public function saveNews(array $item){
