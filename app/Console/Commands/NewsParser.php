@@ -52,16 +52,17 @@ class NewsParser extends Command
             $log->response_code = $response->status();
             $log->response_body = $response->body();
             $log->save();
+                if($response->successful()){
+                    $xmlObject = simplexml_load_string($response->body(), 'SimpleXMLElement', LIBXML_NOCDATA);
+                    $json       = json_encode($xmlObject);
+                    $phpArray   = json_decode($json, true); 
 
-            $xmlObject = simplexml_load_string($response->body(), 'SimpleXMLElement', LIBXML_NOCDATA);
-            $json       = json_encode($xmlObject);
-            $phpArray   = json_decode($json, true); 
-
-            for($i = 0; $i < count($phpArray["channel"]["item"]); $i++){
-                if($this->checkInDB($phpArray["channel"]["item"][$i]["guid"])){
-                    $this->saveNews($phpArray["channel"]["item"][$i]);
+                    for($i = 0; $i < count($phpArray["channel"]["item"]); $i++){
+                        if($this->checkInDB($phpArray["channel"]["item"][$i]["guid"])){
+                            $this->saveNews($phpArray["channel"]["item"][$i]);
+                        }
+                    }
                 }
-            }
         }catch (\Exception $e){
             print($e);
 	    }
